@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,13 +24,13 @@ class PredictRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    model: str | None = None
-    smiles: list[str] = Field(min_length=1)
+    model: Optional[str] = None
+    smiles: List[str] = Field(min_length=1)
     threshold: float = Field(default=0.5, ge=0.0, le=1.0)
 
     @field_validator("smiles")
     @classmethod
-    def _validate_smiles(cls, value: list[str]) -> list[str]:
+    def _validate_smiles(cls, value: List[str]) -> List[str]:
         cleaned = [item.strip() for item in value if item and item.strip()]
         if not cleaned:
             raise ValueError("At least one non-empty SMILES string is required")
@@ -49,7 +50,7 @@ class PredictResponse(BaseModel):
 
     model: str
     threshold: float
-    predictions: list[PredictionItem]
+    predictions: List[PredictionItem]
 
 
 class ModelStatus(BaseModel):
@@ -71,7 +72,7 @@ class HealthResponse(BaseModel):
     artifacts_dir: str
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Optional[Settings] = None) -> FastAPI:
     """Create and configure the FastAPI application."""
 
     settings = settings or get_settings()
@@ -116,8 +117,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             artifacts_dir=str(settings.artifacts_dir),
         )
 
-    @app.get("/models", response_model=list[ModelStatus])
-    async def models() -> list[ModelStatus]:
+    @app.get("/models", response_model=List[ModelStatus])
+    async def models() -> List[ModelStatus]:
         """List the supported models and whether their checkpoints are available."""
 
         return [ModelStatus(**item) for item in list_model_statuses(settings)]
