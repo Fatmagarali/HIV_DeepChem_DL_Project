@@ -1,0 +1,25 @@
+# ============================================================
+# OPTIONAL — AttentiveFP dependencies (dgl + dgllife)
+# ============================================================
+#
+# ⚠️  SECURITY WARNING
+# All known versions of dgl (<= 2.4.0) are affected by a Remote Code
+# Execution vulnerability through pickle deserialization in rpc.recv_request().
+# There is currently NO patched version available.
+# Reference: https://github.com/advisories/GHSA-XXXX (dmlc/dgl RCE)
+#
+# Only install these packages if:
+#   1. You understand and accept the security risk.
+#   2. You run inference in an isolated, trusted environment
+#      (e.g., a sandboxed container with no network access).
+#   3. You never expose the AttentiveFP model via a public API endpoint.
+#
+# Install with:
+#   pip install -r requirements-attentivefp.txt
+#
+# The rest of the project (Random Forest, GraphConv, API) works WITHOUT
+# these packages.  AttentiveFP will gracefully report itself as unavailable.
+# ============================================================
+
+dgl==1.1.3
+dgllife==0.3.2

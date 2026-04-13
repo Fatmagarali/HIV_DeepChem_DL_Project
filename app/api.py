@@ -5,6 +5,15 @@ Start the server::
     python -m uvicorn app.api:app --reload --host 0.0.0.0 --port 8000
 
 Interactive docs available at:  http://localhost:8000/docs
+
+Security note
+-------------
+The ``attentivefp`` model requires ``dgl``, all known versions of which
+(<= 2.4.0) carry a Remote Code Execution vulnerability via pickle
+deserialization (no patched version exists).  To prevent this vulnerability
+from being reachable over the network, the API refuses ``attentivefp``
+requests.  Use the CLI (``src/inference.py``) in a fully isolated environment
+if you need AttentiveFP predictions.
 """
 
 from __future__ import annotations
@@ -20,6 +29,10 @@ from pydantic import BaseModel, Field, field_validator
 from app.config import MODEL_DIR, MODEL_DESCRIPTIONS, THRESHOLD
 
 logger = logging.getLogger(__name__)
+
+# Models blocked from the API due to unpatched security vulnerabilities in
+# their dependencies (dgl RCE — no patched version available).
+_API_BLOCKED_MODELS = {"attentivefp"}
 
 # ---------------------------------------------------------------------------
 # FastAPI application
@@ -70,6 +83,13 @@ class PredictionRequest(BaseModel):
         available = list(MODEL_DESCRIPTIONS.keys())
         if v not in available:
             raise ValueError(f"Unknown model '{v}'. Available: {available}")
+        if v in _API_BLOCKED_MODELS:
+            raise ValueError(
+                f"Model '{v}' is not available via the API due to an unpatched "
+                "security vulnerability in its dependency (dgl RCE, no fix exists). "
+                "Use the CLI in an isolated environment instead: "
+                f"python src/inference.py --model {v} --smiles ..."
+            )
         return v
 
     @field_validator("smiles")
@@ -98,6 +118,13 @@ class ModelInfo(BaseModel):
     description: str
     checkpoint: str
     available: bool
+    api_blocked: bool = Field(
+        default=False,
+        description=(
+            "True if this model is blocked from the API due to a security "
+            "vulnerability in one of its dependencies."
+        ),
+    )
 
 
 class ModelsResponse(BaseModel):
@@ -197,6 +224,7 @@ async def list_models() -> ModelsResponse:
             description=info["description"],
             checkpoint=info["checkpoint"],
             available=os.path.exists(ckpt_path),
+            api_blocked=key in _API_BLOCKED_MODELS,
         )
     return ModelsResponse(models=models)
 

@@ -2,9 +2,14 @@
 deepchem==2.7.1
 tensorflow==2.15.0
 tf-keras==2.15.1
-torch==2.1.2
-dgl==1.1.3
-dgllife==0.3.2
+# torch 2.6.0: fixes CVE heap-overflow, use-after-free, and torch.load RCE (< 2.6.0)
+torch==2.6.0
+
+# NOTE: dgl and dgllife are NOT listed here.
+# All known versions of dgl (<= 2.4.0) are affected by a Remote Code Execution
+# vulnerability via pickle deserialization (no patched version available).
+# See requirements-attentivefp.txt for the optional AttentiveFP dependency,
+# which must only be used in isolated / trusted environments.
 
 # Scientific computing
 scikit-learn==1.3.2

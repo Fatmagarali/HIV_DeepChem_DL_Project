@@ -30,9 +30,30 @@ HIV_DeepChem_DL_Project/
 │   ├── config.py                   # All constants / env-var config
 │   └── api.py                      # FastAPI REST API
 ├── models/                         # Saved checkpoints (git-ignored)
-├── requirements.txt
+├── requirements.txt                # Core dependencies (no dgl)
+├── requirements-attentivefp.txt    # Optional dgl deps — see security note below
 └── README.md
 ```
+
+---
+
+## ⚠️ Security notice
+
+| Dependency | Issue | Status |
+|------------|-------|--------|
+| **dgl ≤ 2.4.0** | RCE via pickle deserialization in `rpc.recv_request()` | **No patched version available** |
+| **torch < 2.6.0** | Heap overflow, use-after-free, `torch.load` RCE | Patched in **2.6.0** (used here) |
+
+**Consequences for this project:**
+
+- `torch` is pinned to `2.6.0` in `requirements.txt`.
+- `dgl` / `dgllife` are **removed from `requirements.txt`**.  
+  The AttentiveFP model will gracefully report itself as unavailable.
+- The REST API **blocks `attentivefp` requests** (`/predict` returns HTTP 422)
+  to prevent the dgl RCE from being reachable over the network.
+- A separate `requirements-attentivefp.txt` file documents the risk and
+  provides the packages for users who explicitly accept it (e.g. isolated
+  offline research environments).
 
 ---
 
@@ -48,12 +69,16 @@ python -m venv .venv
 source .venv/bin/activate        # Linux / macOS
 # .venv\Scripts\activate         # Windows
 
-# 3. Install dependencies
+# 3. Install core dependencies (Random Forest + GraphConv + API)
 pip install -r requirements.txt
 ```
 
-> **Note:** `dgl` and `dgllife` are required only for the AttentiveFP model.
-> If you only need Random Forest or GraphConv, they can be omitted.
+**Optional — AttentiveFP** (read the security warning in that file first):
+
+```bash
+# ⚠️  dgl has an unpatched RCE vulnerability — only use in isolated environments
+pip install -r requirements-attentivefp.txt
+```
 
 ---
 
@@ -158,8 +183,8 @@ load data → predict → visualise — **no training code in the notebook**.
 - Python 3.9+
 - deepchem 2.7.1
 - tensorflow 2.15.0
-- torch 2.1.2
-- dgl + dgllife (optional, for AttentiveFP)
+- torch 2.6.0
+- dgl + dgllife (optional, for AttentiveFP — see security notice above)
 - fastapi + uvicorn (for the API)
 
 See `requirements.txt` for pinned versions.

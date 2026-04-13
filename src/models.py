@@ -407,6 +407,19 @@ class AttentiveFPHIV(HIVModelBase):
         try:
             import dgl  # noqa: F401
             import dgllife  # noqa: F401
+
+            # ⚠️  Security warning: all known versions of dgl (<= 2.4.0) are
+            # affected by a Remote Code Execution vulnerability via pickle
+            # deserialization (no patched version exists).
+            # Only use AttentiveFP in isolated, trusted environments.
+            # See requirements-attentivefp.txt for details.
+            logger.warning(
+                "dgl is installed. All known dgl versions (<= 2.4.0) carry a "
+                "Remote Code Execution risk via pickle deserialization. "
+                "Use AttentiveFP only in isolated, trusted environments and "
+                "never expose it via a public API endpoint."
+            )
+
             import deepchem as dc
             import torch
 
