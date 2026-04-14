@@ -14,7 +14,7 @@ from .models import AVAILABLE_MODELS, canonical_model_name, load_trained_model
 from .utils import ensure_directory
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ModelPrediction:
     """Single-molecule prediction returned by the inference layer."""
 
@@ -60,7 +60,7 @@ def predict_smiles(
 
     return [
         ModelPrediction(smiles=smiles_value, probability=float(probability), label=int(label))
-        for smiles_value, probability, label in zip(normalized_smiles, probabilities, labels, strict=True)
+        for smiles_value, probability, label in zip(normalized_smiles, probabilities, labels)
     ]
 
 

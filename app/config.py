@@ -27,7 +27,7 @@ def _env_str(name: str, default: str) -> str:
     return os.getenv(name, default)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Settings:
     """Runtime settings for the project."""
 
@@ -82,7 +82,7 @@ def get_settings() -> Settings:
         models_dir=models_dir,
         artifacts_dir=artifacts_dir,
         seed=_env_int("HIV_SEED", 42),
-        default_model=_env_str("HIV_DEFAULT_MODEL", "graphconv"),
+        default_model=_env_str("HIV_DEFAULT_MODEL", "random_forest"),
         device=_env_str("HIV_DEVICE", "cpu"),
         api_host=_env_str("HIV_API_HOST", "0.0.0.0"),
         api_port=_env_int("HIV_API_PORT", 8000),

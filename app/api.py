@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional 
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,7 +24,7 @@ class PredictRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    model: str | None = None
+    model: Optional[str] = None
     smiles: list[str] = Field(min_length=1)
     threshold: float = Field(default=0.5, ge=0.0, le=1.0)
 

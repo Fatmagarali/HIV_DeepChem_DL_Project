@@ -9,7 +9,7 @@ import deepchem as dc
 import numpy as np
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class HIVSplits:
     """Container for a train/validation/test split of the HIV dataset."""
 
@@ -110,4 +110,8 @@ def featurize_smiles_for_model(
         raise ValueError(f"Unsupported model name: {model_name}")
 
     features = featurizer.featurize(smiles_list)
+
+    if hasattr(features, 'toarray'):
+        features = features.toarray()
+
     return dc.data.NumpyDataset(X=features, ids=np.asarray(smiles_list, dtype=object))

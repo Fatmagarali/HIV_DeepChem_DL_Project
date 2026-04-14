@@ -61,7 +61,7 @@ def _compute_class_imbalance_ratio(dataset: Any) -> float:
     return negatives / positives
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TrainingResult:
     """Summary returned after a model has been trained."""
 
@@ -95,7 +95,7 @@ class BaseHIVModel(ABC):
         """Restore a model from disk."""
 
 
-@dataclass(slots=True)
+@dataclass
 class RandomForestHIV(BaseHIVModel):
     """Random Forest baseline trained on ECFP fingerprints."""
 
@@ -199,7 +199,7 @@ class RandomForestHIV(BaseHIVModel):
         return instance
 
 
-@dataclass(slots=True)
+@dataclass
 class GraphConvHIV(BaseHIVModel):
     """DeepChem GraphConv model trained on ConvMol features."""
 
@@ -339,7 +339,7 @@ class GraphConvHIV(BaseHIVModel):
         return instance
 
 
-@dataclass(slots=True)
+@dataclass
 class AttentiveFPHIV(BaseHIVModel):
     """DeepChem AttentiveFP model trained on graph featurizations."""
 
