@@ -361,10 +361,9 @@ class AttentiveFPHIV(BaseHIVModel):
         """Return True when the optional DGL dependencies are installed."""
 
         try:
-            import importlib
-
-            importlib.import_module("dgl")
-            importlib.import_module("dgllife")
+            import dgl
+            import dgllife
+            from deepchem.models import AttentiveFPModel  # noqa: F401
         except Exception:
             return False
         return True
