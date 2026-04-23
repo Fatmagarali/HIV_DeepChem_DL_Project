@@ -6,24 +6,24 @@
   <title>HIV DeepChem Predictor</title>
   <style>
     :root {
-      color-scheme: light;
       --bg: #0f172a;
-      --bg-soft: #111827;
       --card: rgba(15, 23, 42, 0.82);
       --card-border: rgba(255, 255, 255, 0.08);
       --text: #e5eefb;
       --muted: #94a3b8;
       --accent: #38bdf8;
-      --accent-2: #f97316;
       --success: #22c55e;
+      --danger: #f87171;
+      --warning: #fbbf24;
       --shadow: 0 24px 80px rgba(2, 6, 23, 0.5);
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
       color: var(--text);
       background:
         radial-gradient(circle at top left, rgba(56, 189, 248, 0.24), transparent 28%),
@@ -71,7 +71,6 @@
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text);
       font-size: 0.95rem;
     }
 
@@ -84,9 +83,7 @@
       overflow: hidden;
     }
 
-    .panel-inner {
-      padding: 24px;
-    }
+    .panel-inner { padding: 24px; }
 
     .grid {
       display: grid;
@@ -94,15 +91,9 @@
       gap: 18px;
     }
 
-    .field {
-      display: grid;
-      gap: 8px;
-    }
+    .field { display: grid; gap: 8px; }
 
-    label {
-      font-size: 0.92rem;
-      color: var(--muted);
-    }
+    label { font-size: 0.92rem; color: var(--muted); }
 
     select, textarea, input {
       width: 100%;
@@ -116,7 +107,7 @@
     }
 
     textarea {
-      min-height: 180px;
+      min-height: 120px;
       resize: vertical;
       line-height: 1.5;
     }
@@ -124,6 +115,103 @@
     select:focus, textarea:focus, input:focus {
       border-color: rgba(56, 189, 248, 0.7);
       box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+    }
+
+    .molecule-section {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .molecule-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: var(--accent);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .molecule-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .mol-tag {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mol-tag:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .mol-tag.selected {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: rgba(56, 189, 248, 0.6);
+      color: var(--accent);
+    }
+
+    .mol-tag .mol-name { font-weight: 600; }
+    .mol-tag .mol-smiles { color: var(--muted); font-size: 0.75rem; font-family: monospace; }
+
+    .selected-mols {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 32px;
+    }
+
+    .selected-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+
+    .selected-pill button {
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.9rem;
+      line-height: 1;
+      font-weight: 700;
     }
 
     .actions {
@@ -140,7 +228,7 @@
       font: inherit;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      transition: transform 0.15s ease, opacity 0.15s ease;
     }
 
     button:hover { transform: translateY(-1px); }
@@ -157,38 +245,144 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .output {
-      display: grid;
-      gap: 14px;
-      margin-top: 18px;
-    }
+    /* Results table */
+    .results-section { margin-top: 24px; }
 
-    .output pre {
-      margin: 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      background: rgba(2, 6, 23, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 16px;
-      min-height: 140px;
-      overflow: auto;
-    }
-
-    .meta {
-      color: var(--muted);
-      font-size: 0.92rem;
+    .results-header {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
     }
 
-    .list {
-      display: grid;
-      gap: 10px;
-      margin-top: 16px;
+    .results-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
     }
+
+    .results-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .results-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .results-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+
+    .results-table tr:last-child td { border-bottom: none; }
+
+    .results-table tr:hover td {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .smiles-cell {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .prob-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .prob-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      max-width: 120px;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .prob-value {
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-width: 48px;
+    }
+
+    .label-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .label-active {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: var(--success);
+    }
+
+    .label-inactive {
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: var(--muted);
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(56,189,248,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .placeholder-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      padding: 32px 0;
+    }
+
+    .list { display: grid; gap: 10px; margin-top: 16px; }
 
     .model-chip {
       display: flex;
@@ -201,6 +395,7 @@
     }
 
     .ok { color: var(--success); }
+    .meta { color: var(--muted); font-size: 0.92rem; display: flex; justify-content: space-between; }
 
     @media (max-width: 900px) {
       .hero, .grid { grid-template-columns: 1fr; }
@@ -213,8 +408,7 @@
       <div>
         <h1 class="title">HIV activity prediction with DeepChem</h1>
         <p class="subtitle">
-          Train and serve Random Forest, GraphConv, and AttentiveFP models on the MolNet HIV dataset.
-          This interface calls the same checkpoint-backed API used by the Python CLI.
+          Predict whether a molecule inhibits HIV replication using Random Forest, GraphConv, or AttentiveFP models trained on the MolNet HIV dataset.
         </p>
         <div class="badge-row">
           <span class="badge">Scaffold split</span>
@@ -246,84 +440,257 @@
           <div class="field">
             <label for="model">Model</label>
             <select id="model">
-              <option value="random_forest">Random Forest</option>
-              <option value="graphconv" selected>GraphConv</option>
-              <option value="attentivefp">AttentiveFP</option>
+              <option value="random_forest">Random Forest — ECFP fingerprints</option>
+              <option value="graphconv" selected>GraphConv — graph convolution</option>
+              <option value="attentivefp">AttentiveFP — attention-based GNN</option>
             </select>
           </div>
           <div class="field">
-            <label for="threshold">Decision threshold</label>
+            <label for="threshold">Decision threshold (actif si probabilité ≥ seuil)</label>
             <input id="threshold" type="number" min="0" max="1" step="0.01" value="0.5" />
           </div>
         </div>
 
-        <div class="field" style="margin-top: 18px;">
-          <label for="smiles">SMILES inputs</label>
-          <textarea id="smiles">CCO
-CC(=O)OC1=CC=CC=C1C(=O)O
-C1=CC=C(C=C1)O</textarea>
+        <!-- Molecule input section -->
+        <div class="molecule-section">
+          <div>
+            <label>Molécules à analyser</label>
+            <div class="molecule-tabs" style="margin-top: 8px;">
+              <button class="tab-btn active" onclick="switchTab('dropdown')">📋 Choisir dans la liste</button>
+              <button class="tab-btn" onclick="switchTab('manual')">✏️ Entrer SMILES manuellement</button>
+            </div>
+          </div>
+
+          <!-- Dropdown tab -->
+          <div class="tab-content active" id="tab-dropdown">
+            <div class="molecule-tags" id="mol-tags"></div>
+            <div style="margin-top: 10px; font-size: 0.82rem; color: var(--muted);">Molécules sélectionnées :</div>
+            <div class="selected-mols" id="selected-mols">
+              <span style="color: var(--muted); font-size: 0.82rem; padding: 4px 0;">Aucune molécule sélectionnée</span>
+            </div>
+          </div>
+
+          <!-- Manual tab -->
+          <div class="tab-content" id="tab-manual">
+            <textarea id="smiles" placeholder="Entrez un SMILES par ligne&#10;Exemple :&#10;CCO&#10;CC(=O)Oc1ccccc1C(=O)O&#10;C1=CC=C(C=C1)O"></textarea>
+            <div style="font-size: 0.82rem; color: var(--muted); margin-top: 4px;">Un SMILES par ligne</div>
+          </div>
         </div>
 
         <div class="actions">
-          <button class="primary" id="predict-btn">Predict</button>
-          <button class="ghost" id="load-btn">Refresh model list</button>
+          <button class="primary" id="predict-btn">🔬 Prédire l'activité</button>
+          <button class="ghost" id="clear-btn">Effacer</button>
         </div>
 
-        <div class="output">
-          <div class="meta">
-            <span>Response</span>
-            <span id="status">Idle</span>
+        <!-- Results -->
+        <div class="results-section" id="results-section">
+          <div class="results-header">
+            <span class="results-title">Résultats</span>
+            <span class="results-meta" id="results-meta"></span>
           </div>
-          <pre id="output">Select a model and submit SMILES to see probabilities here.</pre>
+          <div id="results-container">
+            <div class="placeholder-msg">Sélectionnez des molécules et lancez la prédiction pour voir les résultats.</div>
+          </div>
+          <div class="status-bar">
+            <div class="spinner" id="spinner"></div>
+            <span id="status">En attente</span>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
   <script>
-    const output = document.getElementById('output');
-    const status = document.getElementById('status');
-    const predictBtn = document.getElementById('predict-btn');
-    const loadBtn = document.getElementById('load-btn');
+    // Molecule database
+    const MOLECULES = [
+      { name: "Éthanol", smiles: "CCO", category: "Alcool" },
+      { name: "Aspirine", smiles: "CC(=O)Oc1ccccc1C(=O)O", category: "AINS" },
+      { name: "Phénol", smiles: "c1ccc(O)cc1", category: "Phénol" },
+      { name: "Caféine", smiles: "Cn1cnc2c1c(=O)n(C)c(=O)n2C", category: "Alcaloïde" },
+      { name: "Glucose", smiles: "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O", category: "Sucre" },
+      { name: "Benzène", smiles: "c1ccccc1", category: "Aromatique" },
+      { name: "Ibuprofène", smiles: "CC(C)Cc1ccc(cc1)C(C)C(=O)O", category: "AINS" },
+      { name: "Dopamine", smiles: "NCCc1ccc(O)c(O)c1", category: "Neurotransmetteur" },
+      { name: "Cholestérol", smiles: "CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C", category: "Lipide" },
+      { name: "Paracétamol", smiles: "CC(=O)Nc1ccc(O)cc1", category: "Analgésique" },
+      { name: "Adénine", smiles: "Nc1ncnc2[nH]cnc12", category: "Nucléobase" },
+      { name: "Chloroquine", smiles: "CCN(CC)CCCC(C)Nc1ccnc2cc(Cl)ccc12", category: "Antiparasitaire" },
+    ];
 
-    async function refreshModels() {
-      const response = await fetch('/models');
-      const models = await response.json();
-      status.textContent = 'Model list refreshed';
-      output.textContent = JSON.stringify(models, null, 2);
+    const selectedMolecules = new Set();
+
+    // Build molecule tags
+    const tagsContainer = document.getElementById('mol-tags');
+    MOLECULES.forEach(mol => {
+      const tag = document.createElement('div');
+      tag.className = 'mol-tag';
+      tag.dataset.smiles = mol.smiles;
+      tag.innerHTML = `<span class="mol-name">${mol.name}</span><span class="mol-smiles">${mol.smiles.length > 20 ? mol.smiles.slice(0, 20) + '…' : mol.smiles}</span>`;
+      tag.title = `${mol.name} — ${mol.category}\nSMILES: ${mol.smiles}`;
+      tag.addEventListener('click', () => toggleMolecule(mol, tag));
+      tagsContainer.appendChild(tag);
+    });
+
+    function toggleMolecule(mol, tag) {
+      if (selectedMolecules.has(mol.smiles)) {
+        selectedMolecules.delete(mol.smiles);
+        tag.classList.remove('selected');
+      } else {
+        selectedMolecules.add(mol.smiles);
+        tag.classList.add('selected');
+      }
+      renderSelectedPills();
+    }
+
+    function renderSelectedPills() {
+      const container = document.getElementById('selected-mols');
+      container.innerHTML = '';
+      if (selectedMolecules.size === 0) {
+        container.innerHTML = '<span style="color: var(--muted); font-size: 0.82rem; padding: 4px 0;">Aucune molécule sélectionnée</span>';
+        return;
+      }
+      selectedMolecules.forEach(smiles => {
+        const mol = MOLECULES.find(m => m.smiles === smiles);
+        const pill = document.createElement('div');
+        pill.className = 'selected-pill';
+        pill.innerHTML = `${mol ? mol.name : smiles} <button onclick="removeMolecule('${smiles.replace(/'/g, "\\'")}')">×</button>`;
+        container.appendChild(pill);
+      });
+    }
+
+    function removeMolecule(smiles) {
+      selectedMolecules.delete(smiles);
+      document.querySelectorAll('.mol-tag').forEach(tag => {
+        if (tag.dataset.smiles === smiles) tag.classList.remove('selected');
+      });
+      renderSelectedPills();
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (i === 0 && tab === 'dropdown') || (i === 1 && tab === 'manual'));
+      });
+      document.getElementById('tab-dropdown').classList.toggle('active', tab === 'dropdown');
+      document.getElementById('tab-manual').classList.toggle('active', tab === 'manual');
+    }
+
+    function getSmilesInput() {
+      const activeTab = document.getElementById('tab-dropdown').classList.contains('active') ? 'dropdown' : 'manual';
+      if (activeTab === 'dropdown') {
+        return Array.from(selectedMolecules);
+      } else {
+        return document.getElementById('smiles').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    function getMoleculeName(smiles) {
+      const mol = MOLECULES.find(m => m.smiles === smiles);
+      return mol ? mol.name : null;
+    }
+
+    function getProbColor(prob) {
+      if (prob >= 0.7) return '#f87171';
+      if (prob >= 0.4) return '#fbbf24';
+      return '#38bdf8';
+    }
+
+    function renderResults(data) {
+      const container = document.getElementById('results-container');
+      const meta = document.getElementById('results-meta');
+
+      const activeCount = data.predictions.filter(p => p.label === 1).length;
+      meta.textContent = `Modèle : ${data.model} · Seuil : ${data.threshold} · ${activeCount}/${data.predictions.length} actif(s)`;
+
+      if (data.predictions.length === 0) {
+        container.innerHTML = '<div class="placeholder-msg">Aucun résultat.</div>';
+        return;
+      }
+
+      const rows = data.predictions.map(p => {
+        const name = getMoleculeName(p.smiles);
+        const prob = (p.probability * 100).toFixed(1);
+        const color = getProbColor(p.probability);
+        const labelClass = p.label === 1 ? 'label-active' : 'label-inactive';
+        const labelText = p.label === 1 ? '✓ Actif (HIV+)' : '✗ Inactif';
+        return `
+          <tr>
+            <td><strong>${name || '—'}</strong></td>
+            <td class="smiles-cell" title="${p.smiles}">${p.smiles}</td>
+            <td>
+              <div class="prob-bar-wrap">
+                <div class="prob-bar">
+                  <div class="prob-bar-fill" style="width:${prob}%; background:${color}"></div>
+                </div>
+                <span class="prob-value" style="color:${color}">${prob}%</span>
+              </div>
+            </td>
+            <td><span class="label-badge ${labelClass}">${labelText}</span></td>
+          </tr>`;
+      }).join('');
+
+      container.innerHTML = `
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Molécule</th>
+              <th>SMILES</th>
+              <th>Probabilité d'activité HIV</th>
+              <th>Prédiction</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }
 
     async function predict() {
-      status.textContent = 'Predicting...';
+      const smilesList = getSmilesInput();
+      if (smilesList.length === 0) {
+        document.getElementById('status').textContent = 'Sélectionnez au moins une molécule.';
+        return;
+      }
+
+      const spinner = document.getElementById('spinner');
+      const status = document.getElementById('status');
+      spinner.style.display = 'block';
+      status.textContent = 'Prédiction en cours...';
+
       const payload = {
         model: document.getElementById('model').value,
         threshold: Number(document.getElementById('threshold').value),
-        smiles: document.getElementById('smiles').value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean)
+        smiles: smilesList,
       };
 
-      const response = await fetch('/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-      output.textContent = JSON.stringify(data, null, 2);
-      status.textContent = response.ok ? 'Done' : 'Error';
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          renderResults(data);
+          status.textContent = `✓ Terminé — ${data.predictions.length} molécule(s) analysée(s)`;
+        } else {
+          document.getElementById('results-container').innerHTML = `<div class="placeholder-msg" style="color:var(--danger)">Erreur : ${data.detail}</div>`;
+          status.textContent = 'Erreur';
+        }
+      } catch (err) {
+        status.textContent = 'Erreur réseau';
+      } finally {
+        spinner.style.display = 'none';
+      }
     }
 
-    predictBtn.addEventListener('click', () => {
-      predict().catch((error) => {
-        status.textContent = 'Error';
-        output.textContent = String(error);
-      });
-    });
+    document.getElementById('predict-btn').addEventListener('click', predict);
 
-    loadBtn.addEventListener('click', () => {
-      refreshModels().catch((error) => {
-        status.textContent = 'Error';
-        output.textContent = String(error);
-      });
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      selectedMolecules.clear();
+      document.querySelectorAll('.mol-tag').forEach(t => t.classList.remove('selected'));
+      renderSelectedPills();
+      document.getElementById('smiles').value = '';
+      document.getElementById('results-container').innerHTML = '<div class="placeholder-msg">Sélectionnez des molécules et lancez la prédiction pour voir les résultats.</div>';
+      document.getElementById('results-meta').textContent = '';
+      document.getElementById('status').textContent = 'En attente';
     });
   </script>
 </body>
