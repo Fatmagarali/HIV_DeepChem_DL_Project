@@ -64,6 +64,15 @@ def predict_smiles(
     ]
 
 
+def _has_checkpoints(model_dir: Any) -> bool:
+    """Return True if any checkpoint files exist in the directory."""
+    return (
+        any(model_dir.glob("checkpoint*"))
+        or any(model_dir.glob("*.pt"))
+        or any(model_dir.glob("*.ckpt"))
+    )
+
+
 def list_model_statuses(settings: Settings | None = None) -> list[dict[str, Any]]:
     """Report whether trained artifacts are available for each supported model."""
 
@@ -74,7 +83,7 @@ def list_model_statuses(settings: Settings | None = None) -> list[dict[str, Any]
         if model_name == "random_forest":
             available = (model_dir / "model.joblib").exists()
         else:
-            available = (model_dir / "metadata.json").exists() and any(model_dir.glob("checkpoint*"))
+            available = _has_checkpoints(model_dir)
         statuses.append(
             {
                 "name": model_name,

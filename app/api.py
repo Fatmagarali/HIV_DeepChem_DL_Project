@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional 
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -97,9 +97,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Render the single-page front-end."""
 
         return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
+            request=request,
+            name="index.html",
+            context={
+                
                 "default_model": settings.default_model,
                 "models": list_model_statuses(settings),
             },
