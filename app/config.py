@@ -73,9 +73,9 @@ class Settings:
 def get_settings() -> Settings:
     """Build a cached :class:`Settings` instance from environment variables."""
 
-    project_root = Path(__file__).resolve().parents[1]
-    models_dir = (project_root / _env_str("HIV_MODELS_DIR", "models")).resolve()
-    artifacts_dir = (project_root / _env_str("HIV_ARTIFACTS_DIR", "artifacts")).resolve()
+    project_root = Path("/app")
+    models_dir = Path(_env_str("HIV_MODELS_DIR", "/app/models"))
+    artifacts_dir = Path(_env_str("HIV_ARTIFACTS_DIR", "/app/artifacts"))
 
     return Settings(
         project_root=project_root,
@@ -85,7 +85,7 @@ def get_settings() -> Settings:
         default_model=_env_str("HIV_DEFAULT_MODEL", "random_forest"),
         device=_env_str("HIV_DEVICE", "cpu"),
         api_host=_env_str("HIV_API_HOST", "0.0.0.0"),
-        api_port=_env_int("HIV_API_PORT", 8000),
+        api_port=_env_int("PORT", _env_int("HIV_API_PORT", 8080)),
         training_epochs=_env_int("HIV_EPOCHS", 30),
         batch_size=_env_int("HIV_BATCH_SIZE", 128),
         learning_rate=_env_float("HIV_LEARNING_RATE", 1e-3),

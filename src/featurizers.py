@@ -5,8 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-import deepchem as dc
 import numpy as np
+from rdkit import Chem, DataStructs
+from rdkit.Chem import AllChem
+
+
+@dataclass(frozen=True)
+class FeaturizedBatch:
+    """Lightweight batch container used for runtime inference."""
+
+    X: np.ndarray
+    ids: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -27,12 +36,16 @@ class HIVSplits:
 
 
 def _load_hiv_dataset(featurizer: Any, featurizer_name: str, *, reload: bool = False) -> HIVSplits:
+    import deepchem as dc
+
     tasks, datasets, transformers = dc.molnet.load_hiv(featurizer=featurizer, splitter="scaffold", reload=reload)
     train, valid, test = datasets
     return HIVSplits(tasks=tuple(tasks), train=train, valid=valid, test=test, transformers=tuple(transformers), featurizer_name=featurizer_name)
 
 
 def _featurize_split(split: Any, featurizer: Any, split_name: str) -> Any:
+    import deepchem as dc
+
     smiles = getattr(split, "ids", None)
     if smiles is None:
         raise ValueError(f"Split {split_name} does not expose molecule identifiers")
@@ -43,12 +56,16 @@ def _featurize_split(split: Any, featurizer: Any, split_name: str) -> Any:
 def load_graph_splits(*, reload: bool = False) -> HIVSplits:
     """Load HIV splits featurized with MolGraphConvFeaturizer."""
 
+    import deepchem as dc
+
     featurizer = dc.feat.MolGraphConvFeaturizer(use_edges=True)
     return _load_hiv_dataset(featurizer, "graph", reload=reload)
 
 
 def load_ecfp_splits(graph_splits: HIVSplits, *, size: int = 1024, radius: int = 2) -> HIVSplits:
     """Create ECFP features using the SMILES from already scaffold-split datasets."""
+
+    import deepchem as dc
 
     featurizer = dc.feat.CircularFingerprint(size=size, radius=radius)
     return HIVSplits(
@@ -63,6 +80,8 @@ def load_ecfp_splits(graph_splits: HIVSplits, *, size: int = 1024, radius: int =
 
 def load_convmol_splits(graph_splits: HIVSplits) -> HIVSplits:
     """Create ConvMol features using the SMILES from scaffold-split datasets."""
+
+    import deepchem as dc
 
     featurizer = dc.feat.ConvMolFeaturizer()
     return HIVSplits(
@@ -101,13 +120,26 @@ def featurize_smiles_for_model(
 
     normalized = model_name.strip().lower()
     if normalized in {"random_forest", "rf"}:
-        featurizer = dc.feat.CircularFingerprint(size=ecfp_size, radius=ecfp_radius)
+        features = np.zeros((len(smiles_list), ecfp_size), dtype=np.float32)
+        for row_index, smiles_value in enumerate(smiles_list):
+            molecule = Chem.MolFromSmiles(smiles_value)
+            if molecule is None:
+                raise ValueError(f"Invalid SMILES string: {smiles_value}")
+            fingerprint = AllChem.GetMorganFingerprintAsBitVect(molecule, radius=ecfp_radius, nBits=ecfp_size)
+            DataStructs.ConvertToNumpyArray(fingerprint, features[row_index])
+        return FeaturizedBatch(X=features, ids=np.asarray(smiles_list, dtype=object))
     elif normalized == "graphconv":
+        import deepchem as dc
+
         featurizer = dc.feat.ConvMolFeaturizer()
     elif normalized == "attentivefp":
+        import deepchem as dc
+
         featurizer = dc.feat.MolGraphConvFeaturizer(use_edges=True)
     else:
         raise ValueError(f"Unsupported model name: {model_name}")
+
+    import deepchem as dc
 
     features = featurizer.featurize(smiles_list)
 

@@ -7,9 +7,7 @@ import random
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import average_precision_score, precision_recall_curve, precision_score, recall_score, roc_auc_score, roc_curve
 
 
 def ensure_directory(path: Path) -> Path:
@@ -86,6 +84,8 @@ def safe_roc_auc(y_true: Sequence[int] | np.ndarray, y_score: Sequence[float] | 
     """Compute ROC-AUC and return NaN when only one class is present."""
 
     try:
+        from sklearn.metrics import roc_auc_score
+
         return float(roc_auc_score(np.asarray(y_true).reshape(-1), np.asarray(y_score).reshape(-1)))
     except ValueError:
         return float("nan")
@@ -95,6 +95,8 @@ def safe_average_precision(y_true: Sequence[int] | np.ndarray, y_score: Sequence
     """Compute average precision and return NaN when it cannot be evaluated."""
 
     try:
+        from sklearn.metrics import average_precision_score
+
         return float(average_precision_score(np.asarray(y_true).reshape(-1), np.asarray(y_score).reshape(-1)))
     except ValueError:
         return float("nan")
@@ -115,6 +117,8 @@ def compute_binary_metrics(
     tn = float(np.logical_and(y_true_array == 0, y_pred == 0).sum())
     fp = float(np.logical_and(y_true_array == 0, y_pred == 1).sum())
     fn = float(np.logical_and(y_true_array == 1, y_pred == 0).sum())
+
+    from sklearn.metrics import precision_score, recall_score
 
     precision = float(precision_score(y_true_array, y_pred, zero_division=0))
     recall = float(recall_score(y_true_array, y_pred, zero_division=0))
@@ -141,6 +145,9 @@ def plot_roc_pr_curves(
 
     y_true_array = np.asarray(y_true).reshape(-1).astype(int)
     baseline_pr = float(y_true_array.mean()) if len(y_true_array) else 0.0
+
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import precision_recall_curve, roc_curve
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -207,6 +214,8 @@ def plot_learning_curves(
     output_path: Path | None = None,
 ) -> Path | None:
     """Plot training and validation ROC-AUC histories."""
+
+    import matplotlib.pyplot as plt
 
     fig, axes = plt.subplots(1, len(histories), figsize=(6 * max(len(histories), 1), 4))
     if not isinstance(axes, np.ndarray):

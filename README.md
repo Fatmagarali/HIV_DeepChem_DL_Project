@@ -64,7 +64,7 @@ Options utiles:
 Lancer l'API localement:
 
 ```bash
-uvicorn app.api:app --reload --host 0.0.0.0 --port 8000
+python -m main
 ```
 
 Endpoints:
@@ -89,6 +89,39 @@ docker compose up --build
 
 Le service expose l'API sur `http://localhost:8000`.
 
+## Cloud Run
+
+Le container écoute maintenant sur `PORT` et peut être déployé sur Cloud Run sans proxy supplémentaire.
+
+Pour rester dans un budget serré, le meilleur point de départ est `random_forest` avec `min-instances=0`.
+
+Exemple de déploiement:
+
+```bash
+export PROJECT_ID="your-gcp-project"
+export REGION="us-central1"
+export SERVICE_NAME="hiv-deepchem-api"
+
+gcloud config set project "$PROJECT_ID"
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+gcloud artifacts repositories create "$SERVICE_NAME" --repository-format=docker --location="$REGION" --description="HIV API images"
+gcloud builds submit --tag "$REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest"
+gcloud run deploy "$SERVICE_NAME" \
+  --image "$REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest" \
+  --region "$REGION" \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --cpu 1 \
+  --memory 512Mi \
+  --concurrency 1 \
+  --min-instances 0 \
+  --max-instances 1 \
+  --set-env-vars HIV_DEFAULT_MODEL=random_forest,HIV_DEVICE=cpu
+```
+
+If you need the graph neural network models too, increase memory to `1Gi` or `2Gi` and expect slower cold starts.
+
 ## Variables d'environnement
 
 - `HIV_SEED`
@@ -96,11 +129,21 @@ Le service expose l'API sur `http://localhost:8000`.
 - `HIV_DEVICE`
 - `HIV_API_HOST`
 - `HIV_API_PORT`
+- `PORT`
 - `HIV_MODELS_DIR`
 - `HIV_ARTIFACTS_DIR`
 - `HIV_EPOCHS`
 - `HIV_BATCH_SIZE`
 - `HIV_LEARNING_RATE`
+
+## Cloud Run budget tips
+
+- Keep `min-instances=0` so you do not pay for idle time.
+- Start with `cpu=1` and `memory=512Mi`; increase only if your chosen model needs it.
+- Use `concurrency=1` for predictable per-request memory use.
+- Set `max-instances=1` or `2` while validating the workload so traffic spikes do not surprise the bill.
+- Keep `HIV_DEFAULT_MODEL=random_forest` for the lightest runtime footprint.
+- Avoid CPU always allocated unless you need background warm-up work.
 
 ## Notes de refactor
 

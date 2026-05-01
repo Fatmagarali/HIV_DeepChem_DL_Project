@@ -13,10 +13,29 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.config import Settings, get_settings
 
-from src.inference import list_model_statuses, predict_smiles
-
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+SUPPORTED_MODEL_NAMES = ("random_forest", "graphconv", "attentivefp")
+
+
+def _has_checkpoints(model_dir: Path) -> bool:
+    return any(model_dir.glob("checkpoint*")) or any(model_dir.glob("*.pt")) or any(model_dir.glob("*.ckpt"))
+
+
+def _list_model_statuses(settings: Settings) -> list[dict[str, str | bool]]:
+    statuses: list[dict[str, str | bool]] = []
+    for model_name in SUPPORTED_MODEL_NAMES:
+        model_dir = settings.model_dir_for(model_name)
+        available = (model_dir / "model.joblib").exists() if model_name == "random_forest" else _has_checkpoints(model_dir)
+        statuses.append(
+            {
+                "name": model_name,
+                "path": str(model_dir),
+                "available": available,
+                "metadata": str(model_dir / "metadata.json"),
+            }
+        )
+    return statuses
 
 
 class PredictRequest(BaseModel):
@@ -100,9 +119,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             request=request,
             name="index.html",
             context={
-                
                 "default_model": settings.default_model,
-                "models": list_model_statuses(settings),
+                "models": _list_model_statuses(settings),
             },
         )
 
@@ -122,13 +140,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def models() -> list[ModelStatus]:
         """List the supported models and whether their checkpoints are available."""
 
-        return [ModelStatus(**item) for item in list_model_statuses(settings)]
+        return [ModelStatus(**item) for item in _list_model_statuses(settings)]
 
     @app.post("/predict", response_model=PredictResponse)
     async def predict(payload: PredictRequest) -> PredictResponse:
         """Predict activity labels and probabilities for a batch of SMILES strings."""
 
         try:
+            from src.inference import predict_smiles
+
             model_name = payload.model or settings.default_model
             predictions = predict_smiles(
                 model_name,
